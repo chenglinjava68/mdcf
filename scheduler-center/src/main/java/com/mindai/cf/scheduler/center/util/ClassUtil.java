@@ -69,9 +69,4 @@ public class ClassUtil {
 		}
 		return classes;
 	}
-
-	public static void main(String[] args) {
-		
-	}
-
 }

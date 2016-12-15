@@ -6,6 +6,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -19,6 +20,7 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.spi.JobFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -31,8 +33,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.mindai.cf.scheduler.center.enums.JobGroup;
-import com.mindai.cf.scheduler.center.quartz.job.QuartzJobBean;
-import com.mindai.cf.scheduler.center.util.ClassUtil;
+import com.mindai.common.annotation.QuartzJobTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuartzConfig {
 	
+	@Autowired
+	public ApplicationContext context;
 	/**
 	 * 加载quartz数据源配置,quartz集群时用到
 	 * @throws IOException
@@ -105,8 +108,10 @@ public class QuartzConfig {
 	public Scheduler scheduler(SchedulerFactoryBean schedulerFactory) throws Exception {
 		
 		Scheduler scheduler = schedulerFactory.getScheduler();
-		for (Class<?> classIns : ClassUtil.getAllAssignedClass(QuartzJobBean.class)) {
-			
+		Map<String, Object> beansWithAnnotationMap = context.getBeansWithAnnotation(QuartzJobTask.class);
+		for (Map.Entry<String, Object> entry : beansWithAnnotationMap.entrySet()) {
+			Class<? extends Object> classIns = entry.getValue().getClass();// 获取到实例对象的class信息
+			log.info("---------------add Job start---------------------"+classIns.getSimpleName());
 			Method method = classIns.getMethod("setCronExpression");
 			String cronExpression = (String) method.invoke(classIns.newInstance());
 			JobKey jobkey = new JobKey(classIns.getSimpleName(), JobGroup.TRANS_CENTER.getCode());
@@ -126,6 +131,7 @@ public class QuartzConfig {
 			trigger = triggerBuilder.build();
 		    scheduler.scheduleJob(job, trigger);
 		    log.info(job.getKey() + " will run at: " + cronExpression);
+		    log.info("---------------add Job end---------------------"+classIns.getSimpleName());
 		}
 		return scheduler;
 	}

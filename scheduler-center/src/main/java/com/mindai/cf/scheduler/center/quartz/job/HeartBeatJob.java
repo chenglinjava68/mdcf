@@ -4,7 +4,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
-import org.springframework.stereotype.Component;
+
+import com.mindai.common.annotation.QuartzJobTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author lilei 2016年11月30日
  *
  */
-@Component
+@QuartzJobTask
 @Slf4j
 public class HeartBeatJob extends QuartzJobBean{
 	
